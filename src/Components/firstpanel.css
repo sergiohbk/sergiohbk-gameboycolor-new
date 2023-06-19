@@ -1,0 +1,20 @@
+.MuiCardContent-root:last-child {
+  padding-bottom: 16px !important;
+}
+.MuiCard-root {
+  border-radius: 1.5rem !important;
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+.MuiCardContent-root {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.MuiTableContainer-root {
+  height: 100%;
+}
