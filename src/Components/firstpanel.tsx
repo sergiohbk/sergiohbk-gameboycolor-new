@@ -8,22 +8,26 @@ import {
   updateData,
 } from '../store/features';
 import {
-  TableContainer,
   Paper,
   Table,
   TableHead,
-  TableRow,
   TableBody,
-  TableCell,
   TextField,
   Checkbox,
   FormControlLabel,
   Button,
-  Card,
-  CardContent,
   useTheme,
 } from '@mui/material';
-import './firstpanel.css';
+import {
+  MyHeaderTableRow,
+  MyTableRow,
+  MyTableCell,
+  MyHeaderTableCell,
+  MyCard,
+  MyCardContent,
+  MyTableContainer,
+  screenStyle,
+} from '../styles';
 
 export function GbcScreen() {
   const theme = useTheme();
@@ -48,19 +52,19 @@ export function GbcScreen() {
   //carga de bootrom, DMG
 
   return (
-    <Card
+    <MyCard
       square={true}
       style={{ backgroundColor: theme.palette.background.paper }}
     >
-      <CardContent>
+      <MyCardContent>
         <div
           ref={PIXIref}
           className='screen'
           id='PIXIscreen'
-          style={{ display: 'flex' }}
+          style={screenStyle}
         />
-      </CardContent>
-    </Card>
+      </MyCardContent>
+    </MyCard>
   );
 }
 
@@ -69,66 +73,68 @@ export function GbcPrincipalDataZone() {
   const GbcData = useSelector(selectGameboyData);
 
   return (
-    <Card
+    <MyCard
       style={{ backgroundColor: theme.palette.background.paper }}
     >
-      <CardContent>
-        <TableContainer component={Paper}>
+      <MyCardContent>
+        <MyTableContainer>
           <Table size='small'>
             <TableHead>
-              <TableRow>
-                <TableCell>Tipo de Dato</TableCell>
-                <TableCell>Valor</TableCell>
-              </TableRow>
+              <MyHeaderTableRow>
+                <MyHeaderTableCell>
+                  Tipo de Dato
+                </MyHeaderTableCell>
+                <MyHeaderTableCell>Valor</MyHeaderTableCell>
+              </MyHeaderTableRow>
             </TableHead>
             <TableBody>
-              <TableRow>
-                <TableCell>Estado de la consola</TableCell>
-                <TableCell align='right'>
+              <MyTableRow>
+                <MyTableCell>Estado de la consola</MyTableCell>
+                <MyTableCell align='right'>
                   {GbcData.generalData.GBCSTATE.toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>FPS</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>FPS</MyTableCell>
+                <MyTableCell align='right'>
                   {GbcData.generalData.fps}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Debug</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>Debug</MyTableCell>
+                <MyTableCell align='right'>
                   {String(
                     GbcData.generalData.debugActive,
                   ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Iniciado</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>Iniciado</MyTableCell>
+                <MyTableCell align='right'>
                   {String(
                     GbcData.generalData.isStarted,
                   ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Pausado</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>Pausado</MyTableCell>
+                <MyTableCell align='right'>
                   {String(
                     GbcData.generalData.paused,
                   ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Ciclos de reloj</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>Ciclos de reloj</MyTableCell>
+                <MyTableCell align='right'>
                   {GbcData.cyclesData.cycles}
-                </TableCell>
-              </TableRow>
+                </MyTableCell>
+              </MyTableRow>
             </TableBody>
           </Table>
-        </TableContainer>
-      </CardContent>
-    </Card>
+        </MyTableContainer>
+      </MyCardContent>
+    </MyCard>
   );
 }
 
@@ -137,129 +143,129 @@ export function CPUdataZone() {
   const GbcData = useSelector(selectGameboyData);
 
   return (
-    <Card
+    <MyCard
       style={{ backgroundColor: theme.palette.background.paper }}
     >
-      <CardContent>
-        <TableContainer component={Paper}>
+      <MyCardContent>
+        <MyTableContainer>
           <Table size='small'>
             <TableHead>
-              <TableRow>
-                <TableCell>Cpu dato</TableCell>
-                <TableCell>Valor</TableCell>
-              </TableRow>
+              <MyHeaderTableRow>
+                <MyHeaderTableCell>Cpu dato</MyHeaderTableCell>
+                <MyHeaderTableCell>Valor</MyHeaderTableCell>
+              </MyHeaderTableRow>
             </TableHead>
             <TableBody>
-              <TableRow>
-                <TableCell>A register</TableCell>
-                <TableCell align='right'>
+              <MyTableRow>
+                <MyTableCell>A register</MyTableCell>
+                <MyTableCell align='right'>
                   {'0x' +
                     GbcData.cpuData.registers.A.toString(
                       16,
                     ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>B register</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>B register</MyTableCell>
+                <MyTableCell align='right'>
                   {'0x' +
                     GbcData.cpuData.registers.B.toString(
                       16,
                     ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>C register</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>C register</MyTableCell>
+                <MyTableCell align='right'>
                   {'0x' +
                     GbcData.cpuData.registers.C.toString(
                       16,
                     ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>D register</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>D register</MyTableCell>
+                <MyTableCell align='right'>
                   {'0x' +
                     GbcData.cpuData.registers.D.toString(
                       16,
                     ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>E register</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>E register</MyTableCell>
+                <MyTableCell align='right'>
                   {'0x' +
                     GbcData.cpuData.registers.E.toString(
                       16,
                     ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>H register</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>H register</MyTableCell>
+                <MyTableCell align='right'>
                   {'0x' +
                     GbcData.cpuData.registers.H.toString(
                       16,
                     ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>L register</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>L register</MyTableCell>
+                <MyTableCell align='right'>
                   {'0x' +
                     GbcData.cpuData.registers.L.toString(
                       16,
                     ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>carry flag</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>carry flag</MyTableCell>
+                <MyTableCell align='right'>
                   {String(GbcData.cpuData.flags.C).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>half carry flag</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>half carry flag</MyTableCell>
+                <MyTableCell align='right'>
                   {String(GbcData.cpuData.flags.H).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>subtract flag</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>subtract flag</MyTableCell>
+                <MyTableCell align='right'>
                   {String(GbcData.cpuData.flags.S).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>zero flag</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>zero flag</MyTableCell>
+                <MyTableCell align='right'>
                   {String(GbcData.cpuData.flags.Z).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Program counter</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>Program counter</MyTableCell>
+                <MyTableCell align='right'>
                   {'0x' +
                     GbcData.cpuData.PC.toString(
                       16,
                     ).toUpperCase()}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Stack pointer</TableCell>
-                <TableCell align='right'>
+                </MyTableCell>
+              </MyTableRow>
+              <MyTableRow>
+                <MyTableCell>Stack pointer</MyTableCell>
+                <MyTableCell align='right'>
                   {'0x' +
                     GbcData.cpuData.SP.toString(
                       16,
                     ).toUpperCase()}
-                </TableCell>
-              </TableRow>
+                </MyTableCell>
+              </MyTableRow>
             </TableBody>
           </Table>
-        </TableContainer>
-      </CardContent>
-    </Card>
+        </MyTableContainer>
+      </MyCardContent>
+    </MyCard>
   );
 }
 
@@ -290,10 +296,10 @@ export function UploadBootromZone() {
   const GbcData = useSelector(selectGameboyData);
 
   return (
-    <Card
+    <MyCard
       style={{ backgroundColor: theme.palette.background.paper }}
     >
-      <CardContent>
+      <MyCardContent>
         {!GbcData.generalData.isBootRomLoaded ? (
           <div style={{ display: 'inline-block' }}>
             <input
@@ -324,8 +330,8 @@ export function UploadBootromZone() {
             </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </MyCardContent>
+    </MyCard>
   );
 }
 
@@ -347,10 +353,10 @@ export function GbcDebugConfig() {
   }, [dispatch, intervalDebug]);
 
   return (
-    <Card
+    <MyCard
       style={{ backgroundColor: theme.palette.background.paper }}
     >
-      <CardContent>
+      <MyCardContent>
         <div
           style={{
             display: 'flex',
@@ -381,8 +387,8 @@ export function GbcDebugConfig() {
             htmlFor='debug-checkbox'
           />
         </div>
-      </CardContent>
-    </Card>
+      </MyCardContent>
+    </MyCard>
   );
 }
 
