@@ -1,9 +1,11 @@
-import { MBC } from "./MBC";
-import { Cartridge } from "../cartridge";
+import MBC from './MBC';
+import Cartridge from '../cartridge';
 
-export class ROMonly extends MBC {
+class ROMonly extends MBC {
   constructor(cardridge: Cartridge) {
     super(cardridge);
-    this.name = "ROMONLY";
+    this.name = 'ROMONLY';
   }
 }
+
+export default ROMonly;

@@ -1,11 +1,10 @@
 import { MBC1 } from './MBCs/MBC1';
 import { MBC3 } from './MBCs/MBC3';
 import { MBC5 } from './MBCs/MBC5';
-import { MBC30 } from './MBCs/MBC30';
 import { ROMonly } from './MBCs/ROMonly';
 import { createRamBanks, getBanksFromRom } from './tools/data';
 
-export class Cartridge {
+class Cartridge {
   title: string;
   rom: Uint8ClampedArray;
   compatibility: string;
@@ -413,3 +412,5 @@ function globalCheckSum(rom: Uint8ClampedArray): boolean {
   return sum === ((rom[0x14e] << 8) | rom[0x14f]);
 }
 /* eslint-disable @typescript-eslint/no-unused-vars */
+
+export default Cartridge;

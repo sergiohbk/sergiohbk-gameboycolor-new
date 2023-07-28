@@ -1,14 +1,20 @@
-import { CPU } from '../cpu';
-import { CYCLES } from '../cycles';
-import { FLAGS } from '../generalFlags';
-import { Memory } from '../memory';
+import Bootrom from '../bootrom';
+import CPU from '../cpu';
+import CYCLES from '../cycles';
+import FLAGS from '../generalFlags';
+import Memory from '../memory';
 
 describe('Cpu tests', () => {
   let cpu: CPU;
   let flags: FLAGS;
   beforeEach(() => {
     flags = new FLAGS();
-    cpu = new CPU(new Memory(flags), new CYCLES(), flags);
+    cpu = new CPU(
+      new Memory(flags, new Bootrom()),
+      new CYCLES(),
+      flags,
+      new Bootrom(),
+    );
     cpu.SP = 0xfffe;
     cpu.testMode = true;
   });
@@ -122,8 +128,177 @@ describe('Cpu tests', () => {
     it('0x20 should jump relative getting 8 bits (0x23)', () => {
       cpu.PC = 0x2000;
       cpu.instructionSet(0x20);
-      expect(cpu.PC).toBe(0x2023);
+      expect(cpu.PC).toBe(0x2025);
       expect(cpu.cycles.cycles).toBe(12);
+    });
+    it('debe saltar al RST en todas las situaciones y retornar con RET', () => {
+      cpu.PC = 0x2000;
+      cpu.instructionSet(0xcf);
+      expect(cpu.PC).toBe(0x08);
+      expect(cpu.cycles.cycles).toBe(16);
+      expect(cpu.memory.stackMem[0xfffe]).toBe(0x20);
+      expect(cpu.memory.stackMem[0xfffd]).toBe(0x00);
+      cpu.instructionSet(0xc9);
+      expect(cpu.PC).toBe(0x2000);
+      expect(cpu.cycles.cycles).toBe(32);
+      cpu.PC = 0x2333;
+      cpu.instructionSet(0xc7);
+      expect(cpu.PC).toBe(0x00);
+      expect(cpu.cycles.cycles).toBe(48);
+      cpu.PC = 0x10;
+      cpu.instructionSet(0xdf);
+      expect(cpu.PC).toBe(0x18);
+      expect(cpu.cycles.cycles).toBe(64);
+      expect(cpu.memory.stackMem[0xfffc]).toBe(0x00);
+      expect(cpu.memory.stackMem[0xfffb]).toBe(0x10);
+      expect(cpu.memory.stackMem[0xfffe]).toBe(0x23);
+      expect(cpu.memory.stackMem[0xfffd]).toBe(0x33);
+    });
+  });
+  describe('IncDec', () => {
+    it('incrementar de 0 a 1', () => {
+      const result = cpu.IncDec('inc', 0, true);
+      expect(result).toEqual(1);
+      expect(cpu.zeroFlag).toBe(false);
+      expect(cpu.halfCarryFlag).toBe(false);
+      expect(cpu.subtractFlag).toBe(false);
+    });
+
+    it('incrementar de 15 a 16 para el half carry flag', () => {
+      const result = cpu.IncDec('inc', 15, true);
+      expect(result).toEqual(16);
+      expect(cpu.zeroFlag).toBe(false);
+      expect(cpu.halfCarryFlag).toBe(true);
+      expect(cpu.subtractFlag).toBe(false);
+    });
+
+    it('decrementar de 1 a 0', () => {
+      const result = cpu.IncDec('dec', 1, true);
+      expect(result).toEqual(0);
+      expect(cpu.zeroFlag).toBe(true);
+      expect(cpu.halfCarryFlag).toBe(false);
+      expect(cpu.subtractFlag).toBe(true);
+    });
+
+    it('decrementar de 16 a 15 para el half carry flag', () => {
+      const result = cpu.IncDec('dec', 16, true);
+      expect(result).toEqual(15);
+      expect(cpu.zeroFlag).toBe(false);
+      expect(cpu.halfCarryFlag).toBe(true); // 16 & 0xf - 1 es 0, que es menor que 0
+      expect(cpu.subtractFlag).toBe(true);
+    });
+
+    it('incrementar de 255 a 0 (overflow)', () => {
+      const result = cpu.IncDec('inc', 255, true);
+      expect(result).toEqual(0);
+      expect(cpu.zeroFlag).toBe(true);
+      expect(cpu.halfCarryFlag).toBe(true);
+      expect(cpu.subtractFlag).toBe(false);
+    });
+
+    it('decrementar de 0 a 255 (underflow)', () => {
+      const result = cpu.IncDec('dec', 0, true);
+      expect(result).toEqual(255);
+      expect(cpu.zeroFlag).toBe(false);
+      expect(cpu.halfCarryFlag).toBe(true); // 0 & 0xf - 1 es -1, que es menor que 0
+      expect(cpu.subtractFlag).toBe(true);
+    });
+
+    it('incrementar sin actualizar flags', () => {
+      const result = cpu.IncDec('inc', 0, false);
+      expect(result).toEqual(1);
+      expect(cpu.zeroFlag).toBe(false);
+      expect(cpu.halfCarryFlag).toBe(false);
+      expect(cpu.subtractFlag).toBe(false);
+    });
+
+    it('decrementar sin actualizar flags', () => {
+      const result = cpu.IncDec('dec', 0xff34, false);
+      expect(result).toEqual(0xff33);
+      expect(cpu.zeroFlag).toBe(false);
+      expect(cpu.halfCarryFlag).toBe(false);
+      expect(cpu.subtractFlag).toBe(false);
+    });
+    describe('addsub', () => {
+      it('debe sumar dos numeros de 8 bits', () => {
+        cpu.addSub('add', 0x12, 0x34, 8);
+        expect(cpu.zeroFlag).toBe(false);
+        expect(cpu.halfCarryFlag).toBe(false);
+        expect(cpu.carryFlag).toBe(false);
+        expect(cpu.subtractFlag).toBe(false);
+      });
+
+      it('debe sumar dos numeros de 16 bits', () => {
+        cpu.addSub('add', 0x1234, 0x4567, 16);
+        expect(cpu.zeroFlag).toBe(false);
+        expect(cpu.halfCarryFlag).toBe(false);
+        expect(cpu.carryFlag).toBe(false);
+        expect(cpu.subtractFlag).toBe(false);
+      });
+
+      it('sumar numeros con el carry activado y haciendo overflow', () => {
+        cpu.carryFlag = true;
+        let result = cpu.addSub('adc', 0xfd, 0x02, 8);
+        expect(cpu.carryFlag).toBe(true);
+        expect(cpu.halfCarryFlag).toBe(false);
+        expect(cpu.subtractFlag).toBe(false);
+        expect(cpu.zeroFlag).toBe(true);
+        expect(result).toBe(0x00);
+      });
+
+      it('should correctly subtract two 8 bit numbers', () => {
+        cpu.addSub('sub', 0x90, 0x11, 8);
+        expect(cpu.carryFlag).toBe(false);
+        expect(cpu.halfCarryFlag).toBe(true);
+        expect(cpu.subtractFlag).toBe(true);
+        expect(cpu.zeroFlag).toBe(false);
+      });
+
+      it('should correctly subtract two 8 bit numbers with carry', () => {
+        cpu.addSub('sbc', 0x90, 0x11, 8);
+        expect(cpu.carryFlag).toBe(false);
+        expect(cpu.halfCarryFlag).toBe(true);
+        expect(cpu.subtractFlag).toBe(true);
+        expect(cpu.zeroFlag).toBe(false);
+      });
+
+      it('should correctly add two 16 bit numbers', () => {
+        cpu.addSub('add', 0x1234, 0x5678, 16);
+        expect(cpu.carryFlag).toBe(false);
+        expect(cpu.halfCarryFlag).toBe(false);
+        expect(cpu.subtractFlag).toBe(false);
+        expect(cpu.zeroFlag).toBe(false);
+      });
+
+      it('should correctly subtract two 16 bit numbers', () => {
+        cpu.addSub('sub', 0x8000, 0x2000, 16);
+        expect(cpu.carryFlag).toBe(false);
+        expect(cpu.halfCarryFlag).toBe(false);
+        expect(cpu.subtractFlag).toBe(true);
+        expect(cpu.zeroFlag).toBe(false);
+      });
+
+      it('should set the zero flag when result is zero', () => {
+        cpu.addSub('sub', 0x12, 0x12, 8);
+        expect(cpu.zeroFlag).toBe(true);
+      });
+    });
+    describe('bootrom test work', () => {
+      test('bootrom test instructions', () => {
+        //LD SP 0xFFFE
+        cpu.instructionSet(0x31);
+        cpu.SP = 0xfffe;
+        expect(cpu.PC).toBe(0x3);
+        expect(cpu.cycles.cycles).toBe(12);
+        cpu.instructionSet(0xaf);
+        expect(cpu.A).toBe(0);
+        expect(cpu.zeroFlag).toBe(true);
+        expect(cpu.cycles.cycles).toBe(16);
+        expect(cpu.PC).toBe(0x4);
+        cpu.PC = 0x000a;
+        cpu.PC += cpu.JR(0xfb);
+        expect(cpu.PC).toBe(0x7);
+      });
     });
   });
 });

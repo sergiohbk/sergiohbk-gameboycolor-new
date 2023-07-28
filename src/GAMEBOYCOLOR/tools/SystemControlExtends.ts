@@ -4,6 +4,9 @@ export class SysCtrlExtends {
   limitEntrys: number;
   cpuStack: number[];
   isDebug: boolean;
+  pcLog: number[];
+  logFlag: boolean;
+  verbose: boolean;
 
   constructor() {
     this.limitEntrys = 300;
@@ -11,6 +14,9 @@ export class SysCtrlExtends {
     this.injectInstructions = [];
     this.cpuStack = [];
     this.isDebug = true;
+    this.pcLog = [];
+    this.logFlag = true;
+    this.verbose = true;
   }
 }
 

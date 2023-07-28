@@ -1,6 +1,6 @@
 import { Sprite, Texture } from 'pixi.js';
-import { Components } from './components';
-import { ROMonly } from './MBCs/ROMonly';
+import Components from './components';
+import ROMonly from './MBCs/ROMonly';
 
 enum GBCstate {
   OFF = 'OFF',
@@ -13,7 +13,7 @@ enum GBCstate {
   RESET = 'RESET',
 }
 
-export class GAMEBOYCOLOR extends Components {
+class GAMEBOYCOLOR extends Components {
   fps: number;
   maxFps: number;
   isStarted: boolean;
@@ -27,7 +27,7 @@ export class GAMEBOYCOLOR extends Components {
   texture: Texture;
 
   constructor() {
-    super(true);
+    super();
 
     this.maxFps = 59.7;
     this.isStarted = false;
@@ -121,7 +121,7 @@ export class GAMEBOYCOLOR extends Components {
 
   setMBCtoMemory() {
     if (this.cartridge.cardType[0] === null) {
-      console.log('MBC not supported');
+      console.error('MBC not supported');
       return;
     }
     this.memory.MemoryMap = new this.cartridge.cardType[0](
@@ -133,5 +133,5 @@ export class GAMEBOYCOLOR extends Components {
     this.memory.MemoryMap = new ROMonly(this.cartridge);
   }
 }
-
-export const gbc = new GAMEBOYCOLOR();
+const gbc = new GAMEBOYCOLOR();
+export default gbc;

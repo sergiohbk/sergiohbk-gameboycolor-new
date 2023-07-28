@@ -1,11 +1,11 @@
-import { MBC1 } from './MBCs/MBC1';
-import { MBC3 } from './MBCs/MBC3';
-import { MBC30 } from './MBCs/MBC30';
-import { MBC5 } from './MBCs/MBC5';
-import { ROMonly } from './MBCs/ROMonly';
-import { FLAGS } from './generalFlags';
+import MBC1 from './MBCs/MBC1';
+import MBC3 from './MBCs/MBC3';
+import MBC30 from './MBCs/MBC30';
+import MBC5 from './MBCs/MBC5';
+import ROMonly from './MBCs/ROMonly';
+import FLAGS from './generalFlags';
 
-export class MemoryData {
+class MemoryData {
   //----DEPENDENCIES----
   flags: FLAGS;
   //--------------ROM---------------
@@ -182,7 +182,6 @@ export class MemoryData {
   setIOhandlerLogic() {
     this.ioHandlers[0xff00] = {
       read: () => {
-        console.log('read P1');
         return this.P1;
       },
       write: (_, value: number) => {
@@ -543,3 +542,5 @@ interface IOHandler {
   read: (address: number) => number;
   write: (address: number, value: number) => void;
 }
+
+export default MemoryData;

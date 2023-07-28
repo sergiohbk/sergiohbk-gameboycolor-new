@@ -1,9 +1,8 @@
-import { sysctrl } from './tools/SystemControl';
-import { Memory } from './memory';
-import { CYCLES } from './cycles';
-import { FLAGS } from './generalFlags';
-import { INTERRUPTS } from './interrupts';
-import { Bootrom } from './bootrom';
+import Memory from './memory';
+import CYCLES from './cycles';
+import FLAGS from './generalFlags';
+import INTERRUPTS from './interrupts';
+import Bootrom from './bootrom';
 
 enum CPUstate {
   INSTRUCTION = 'INSTRUCTION',
@@ -16,12 +15,12 @@ enum CPUstate {
   COLLAPSED = 'COLLAPSED',
 }
 
-export class CPU {
+class CPU {
   //----DEPENDENCIES----
   memory: Memory;
   cycles: CYCLES;
   flags: FLAGS;
-  bootrom?: Bootrom;
+  bootrom: Bootrom;
   //----REGISTERS----
   A: number; // Accumulator
   B: number; // B
@@ -49,7 +48,7 @@ export class CPU {
     memory: Memory,
     cycles: CYCLES,
     flags: FLAGS,
-    bootrom?: Bootrom,
+    bootrom: Bootrom,
   ) {
     //----DEPENDENCIES----
     this.memory = memory;
@@ -100,12 +99,6 @@ export class CPU {
   }
 
   decode(opcode: number) {
-    if (sysctrl.isDebug)
-      sysctrl.addInstruction({
-        opcode: opcode,
-        pc: this.PC,
-        cycles: this.cycles.getCycles(),
-      });
     if (opcode !== undefined) this.instructionSet(opcode);
     else
       throw new Error(
@@ -178,7 +171,6 @@ export class CPU {
     this.memory.stackMem[this.SP] = value;
     this.SP--;
     //a revisar si se resta antes o despues
-    if (sysctrl.isDebug) sysctrl.pushStack(value);
   }
   //----STACKPUSH16BIT----
   stackPush16bit(value: number) {
@@ -186,7 +178,6 @@ export class CPU {
     this.memory.stackMem[this.SP] = value >> 8;
     this.memory.stackMem[this.SP - 1] = value & 0xff;
     this.SP -= 2;
-    if (sysctrl.isDebug) sysctrl.pushStack(value);
   }
   //----STACKPOP8BIT----
   stackPop8bit() {
@@ -195,7 +186,6 @@ export class CPU {
     }
 
     this.SP++;
-    if (sysctrl.isDebug) sysctrl.popStack();
     return this.memory.stackMem[this.SP];
   }
   //----STACKPOP16BIT----
@@ -205,7 +195,6 @@ export class CPU {
     }
 
     this.SP += 2;
-    if (sysctrl.isDebug) sysctrl.popStack();
     return (
       (this.memory.stackMem[this.SP] << 8) |
       this.memory.stackMem[this.SP - 1]
@@ -214,14 +203,14 @@ export class CPU {
   //----8NEXTBITSDATA----
   get8nextBits() {
     if (this.testMode) return 0x23;
-    return this.memory.read(this.PC++);
+    return this.memory.read(this.PC + 1);
   }
   //----16NEXTBITSDATA----
   get16nextBits() {
     if (this.testMode) return 0x2323;
     return (
       (this.memory.read(this.PC + 2) << 8) |
-      this.memory.read(this.PC++)
+      this.memory.read(this.PC + 1)
     );
   }
   //----PROGRAM COUNTER INCREMENT----
@@ -232,6 +221,7 @@ export class CPU {
   //----INSTRUCTIONS----
   instructionSet(opcode: number) {
     this.CPUSTATE = CPUstate.INSTRUCTION;
+
     switch (opcode) {
       case 0x00:
         //NOP
@@ -1322,10 +1312,10 @@ export class CPU {
       case 0xc4:
         //CALL NZ, nn
         if (!this.zeroFlag) {
-          this.stackPush16bit(this.PC + 2);
+          this.stackPush16bit(this.PC + 3);
           this.PC =
-            this.memory.read(this.PC) |
-            (this.memory.read(this.PC + 1) << 8);
+            this.memory.read(this.PC + 1) |
+            (this.memory.read(this.PC + 2) << 8);
           this.pcIncrement(-1);
           this.cycles.sumCycles(24);
         } else {
@@ -3118,16 +3108,16 @@ export class CPU {
             this.cycles.sumCycles(8);
             break;
           default:
-            console.log('Unimplemented CB prefix instruction');
+            console.error('Unimplemented CB prefix instruction');
         }
         break;
       case 0xcc:
         //CALL Z, nn
         if (this.zeroFlag) {
-          this.stackPush16bit(this.PC + 2);
+          this.stackPush16bit(this.PC + 3);
           this.PC =
-            this.memory.read(this.PC) |
-            (this.memory.read(this.PC + 1) << 8);
+            this.memory.read(this.PC + 1) |
+            (this.memory.read(this.PC + 2) << 8);
           this.pcIncrement(-1);
           this.cycles.sumCycles(24);
         } else {
@@ -3137,10 +3127,10 @@ export class CPU {
         break;
       case 0xcd:
         //CALL nn
-        this.stackPush16bit(this.PC + 2);
+        this.stackPush16bit(this.PC + 3);
         this.PC =
-          this.memory.read(this.PC) |
-          (this.memory.read(this.PC + 1) << 8);
+          this.memory.read(this.PC + 1) |
+          (this.memory.read(this.PC + 2) << 8);
         this.pcIncrement(-1);
         this.cycles.sumCycles(24);
         break;
@@ -3193,10 +3183,10 @@ export class CPU {
       case 0xd4:
         //CALL NC, nn
         if (!this.carryFlag) {
-          this.stackPush16bit(this.PC + 2);
+          this.stackPush16bit(this.PC + 3);
           this.PC =
-            this.memory.read(this.PC) |
-            (this.memory.read(this.PC + 1) << 8);
+            this.memory.read(this.PC + 1) |
+            (this.memory.read(this.PC + 2) << 8);
           this.pcIncrement(-1);
           this.cycles.sumCycles(24);
         } else {
@@ -3260,10 +3250,10 @@ export class CPU {
       case 0xdc:
         //CALL C, nn
         if (this.carryFlag) {
-          this.stackPush16bit(this.PC + 2);
+          this.stackPush16bit(this.PC + 3);
           this.PC =
-            this.memory.read(this.PC) |
-            (this.memory.read(this.PC + 1) << 8);
+            this.memory.read(this.PC + 1) |
+            (this.memory.read(this.PC + 2) << 8);
           this.pcIncrement(-1);
           this.cycles.sumCycles(24);
         }
@@ -3462,10 +3452,10 @@ export class CPU {
     this.pcIncrement(1);
   }
 
-  //0 zero, 1 halfcarry, 2 negative, 3 carry
   IncDec(op: 'inc' | 'dec', register: number, flags?: boolean) {
-    const result = op === 'inc' ? register + 1 : register - 1;
+    let result = op === 'inc' ? register + 1 : register - 1;
     if (!flags) return result & 0xffff;
+    result = result & 0xff;
     //flags
     this.zeroFlag = result === 0;
     if (op === 'inc')
@@ -3474,7 +3464,7 @@ export class CPU {
       this.halfCarryFlag = (register & 0xf) - 1 < 0;
     this.subtractFlag = op === 'dec';
 
-    return result & 0xff;
+    return result;
   }
 
   rotShift(
@@ -3595,7 +3585,7 @@ export class CPU {
   JR(byte: number): number {
     //byte > 0x7f ? byte - 0x100 : byte o (byte ^ 0x80) - 0x80 otras formas de hacerlo signed
     const signed = (byte << 24) >> 24;
-    return signed;
+    return signed + 2;
   }
 
   DAA(register: number): number {
@@ -3646,6 +3636,8 @@ export class CPU {
     if (op === 'cp') {
       this.halfCarryFlag = (register & 0xf) - (value & 0xf) < 0;
       this.carryFlag = result < 0;
+
+      return register;
     }
 
     return result & 0xff;
@@ -3717,3 +3709,5 @@ export class CPU {
     this.subtractFlag = false;
   }
 }
+
+export default CPU;

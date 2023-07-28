@@ -1,3 +1,3 @@
-export class Controller {
-  constructor() {}
-}
+class Controller {}
+
+export default Controller;

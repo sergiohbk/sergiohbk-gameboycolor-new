@@ -1,14 +1,15 @@
-import { Memory } from '../memory';
-import { FLAGS } from '../generalFlags';
-import { MBC1 } from '../MBCs/MBC1';
-import { ROMonly } from '../MBCs/ROMonly';
-import { Cartridge } from '../cartridge';
+import Memory from '../memory';
+import FLAGS from '../generalFlags';
+import MBC1 from '../MBCs/MBC1';
+import ROMonly from '../MBCs/ROMonly';
+import Cartridge from '../cartridge';
+import Bootrom from '../bootrom';
 
 describe('RomOnly memory test', () => {
   let memory: Memory;
 
   beforeEach(() => {
-    memory = new Memory(new FLAGS());
+    memory = new Memory(new FLAGS(), new Bootrom());
     memory.setMBC(new ROMonly(new Cartridge()));
   });
 

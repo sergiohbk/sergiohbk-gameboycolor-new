@@ -1,11 +1,11 @@
-import { MemoryData } from './MemoryData';
-import { MBC1 } from './MBCs/MBC1';
-import { MBC3 } from './MBCs/MBC3';
-import { MBC30 } from './MBCs/MBC30';
-import { MBC5 } from './MBCs/MBC5';
-import { ROMonly } from './MBCs/ROMonly';
-import { Bootrom } from './bootrom';
-import { FLAGS } from './generalFlags';
+import MemoryData from './MemoryData';
+import MBC1 from './MBCs/MBC1';
+import MBC3 from './MBCs/MBC3';
+import MBC30 from './MBCs/MBC30';
+import MBC5 from './MBCs/MBC5';
+import ROMonly from './MBCs/ROMonly';
+import Bootrom from './bootrom';
+import FLAGS from './generalFlags';
 
 enum MemState {
   WRITE = 'WRITE',
@@ -14,13 +14,13 @@ enum MemState {
   RESET = 'RESET',
 }
 
-export class Memory extends MemoryData {
+class Memory extends MemoryData {
   //----DEPENDENCIES----
-  bootrom?: Bootrom;
+  bootrom: Bootrom;
   //----STATE----
   MEMSTATE: MemState;
 
-  constructor(flags: FLAGS, bootrom?: Bootrom) {
+  constructor(flags: FLAGS, bootrom: Bootrom) {
     super(flags);
     this.bootrom = bootrom;
 
@@ -138,9 +138,9 @@ export class Memory extends MemoryData {
     this.MEMSTATE = MemState.READ;
     //----BOOT ROM----
     if (
-      this.bootrom?.isActive &&
-      ((address >= 0x0000 && address <= 0x00ff) ||
-        (address >= 0x0200 && address <= 0x08ff))
+      this.bootrom.isActive &&
+      ((address >= 0x0 && address <= 0xff) ||
+        (address >= 0x200 && address <= 0x8ff))
     ) {
       if (address === 0x100) this.bootrom.isActive = false;
       return this.bootrom.rom![address];
@@ -217,3 +217,5 @@ export class Memory extends MemoryData {
     return 0xff;
   }
 }
+
+export default Memory;

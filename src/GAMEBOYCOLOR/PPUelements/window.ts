@@ -1,5 +1,3 @@
-export class Window{
-    constructor() {
-        
-    }
-}
+class Window {}
+
+export default Window;

@@ -32,6 +32,7 @@ export interface GameboyData {
     };
     PC: number;
     SP: number;
+    CPUSTATE: string;
   };
 }
 
@@ -66,6 +67,7 @@ const initialState: GameboyData = {
     },
     PC: 0,
     SP: 0,
+    CPUSTATE: '',
   },
 };
 

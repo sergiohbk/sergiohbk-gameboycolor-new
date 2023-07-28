@@ -1,5 +1,5 @@
 //test texture buffer
-import { gbc } from '../gbc';
+import gbc from '../gbc';
 import * as PIXI from 'pixi.js';
 
 describe('CGB general', () => {

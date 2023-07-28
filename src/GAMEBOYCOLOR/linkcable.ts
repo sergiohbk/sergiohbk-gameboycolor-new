@@ -1,1 +1,3 @@
-export class LinkCable {}
+class LinkCable {}
+
+export default LinkCable;

@@ -8,7 +8,6 @@ import {
   updateData,
 } from '../store/features';
 import {
-  Paper,
   Table,
   TableHead,
   TableBody,
@@ -156,6 +155,12 @@ export function CPUdataZone() {
               </MyHeaderTableRow>
             </TableHead>
             <TableBody>
+              <MyTableRow>
+                <MyTableCell>estado de la CPU</MyTableCell>
+                <MyTableCell align='right'>
+                  {GbcData.cpuData.CPUSTATE}
+                </MyTableCell>
+              </MyTableRow>
               <MyTableRow>
                 <MyTableCell>A register</MyTableCell>
                 <MyTableCell align='right'>
@@ -424,6 +429,7 @@ function getUpdatedGBCData(): GameboyData {
       },
       PC: gbc.cpu.PC,
       SP: gbc.cpu.SP,
+      CPUSTATE: gbc.cpu.CPUSTATE,
     },
   };
 }

@@ -1,1 +1,3 @@
-export class APU {}
+class APU {}
+
+export default APU;

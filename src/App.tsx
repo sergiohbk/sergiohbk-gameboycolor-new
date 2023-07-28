@@ -9,6 +9,8 @@ import {
 import { Parallax } from 'react-parallax';
 import { useTheme } from '@mui/material/styles';
 import './App.css';
+import Grid from '@mui/material/Unstable_Grid2';
+import Item from '@mui/material/Unstable_Grid2';
 
 function App() {
   const theme = useTheme();
@@ -17,40 +19,52 @@ function App() {
       <Parallax
         style={{
           backgroundColor: theme.palette.background.default,
-          height: '100vh',
+          height: '100%',
           position: 'relative',
           padding: '1rem',
         }}
         strength={100}
       >
-        <div className='grid-container'>
-          <div className='item1'>
-            <GbcPrincipalDataZone />
-          </div>
-          <div className='item2'>
-            <GbcScreen />
-          </div>
-          <div className='item4'>
-            <CPUdataZone />
-          </div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div>
-            <GbcDebugConfig />
-          </div>
-          <div>
-            <UploadBootromZone />
-          </div>
-          <div></div>
-          <div></div>
-        </div>
+        <Grid
+          container
+          spacing={3}
+          display={'flex'}
+          justifyContent={'center'}
+          alignContent={'space-around'}
+          height={'100%'}
+          flexGrow={1}
+        >
+          <Grid xs={12} md={3} lg={2}>
+            <Item>
+              <GbcPrincipalDataZone />
+            </Item>
+          </Grid>
+          <Grid xs={12} md={6} lg={8}>
+            <Item>
+              <GbcScreen />
+            </Item>
+          </Grid>
+          <Grid xs={12} md={3} lg={2}>
+            <Item>
+              <CPUdataZone />
+            </Item>
+          </Grid>
+          <Grid xs={12} md={3} lg={2}>
+            <Item>
+              <GbcDebugConfig />
+            </Item>
+          </Grid>
+          <Grid xs={12} md={3} lg={2}>
+            <Item>
+              <UploadBootromZone />
+            </Item>
+          </Grid>
+        </Grid>
       </Parallax>
       <Parallax
         style={{
           backgroundColor: theme.palette.background.paper,
-          height: '100vh',
+          height: '100%',
           position: 'relative',
         }}
         strength={100}

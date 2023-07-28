@@ -1,4 +1,4 @@
-export class Bootrom {
+class Bootrom {
   rom: Uint8ClampedArray | null;
   isActive: boolean;
   isBootromLoaded: boolean;
@@ -16,8 +16,6 @@ export class Bootrom {
     this.isBootromLoaded = true;
     this.isActive = true;
     this.isGBC = this.getBootRomSize(rom);
-
-    console.log(this.rom);
   }
 
   getBootRomSize(rom: Uint8ClampedArray) {
@@ -25,3 +23,5 @@ export class Bootrom {
     else return true;
   }
 }
+
+export default Bootrom;
