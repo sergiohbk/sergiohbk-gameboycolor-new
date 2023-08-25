@@ -19,24 +19,20 @@ export const MyTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-export const MyHeaderTableRow = styled(TableRow)(
-  ({ theme }) => ({
-    backgroundColor: theme.TablePalette.header,
-  }),
-);
+export const MyHeaderTableRow = styled(TableRow)(({ theme }) => ({
+  backgroundColor: theme.TablePalette.header,
+}));
 
 export const MyTableCell = styled(TableCell)(({ theme }) => ({
   fontSize: '0.65rem',
   fontWeight: 'bold',
 }));
 
-export const MyHeaderTableCell = styled(TableCell)(
-  ({ theme }) => ({
-    fontSize: '0.8rem',
-    fontWeight: '800',
-    borderBottom: '1px solid rgba(255,255,255, 0.8)',
-  }),
-);
+export const MyHeaderTableCell = styled(TableCell)(({ theme }) => ({
+  fontSize: '0.8rem',
+  fontWeight: '800',
+  borderBottom: '1px solid rgba(255,255,255, 0.8)',
+}));
 
 export const MyCard = styled(Card)(({ theme }) => ({
   borderRadius: '1.5rem',
@@ -64,4 +60,25 @@ export const screenStyle = {
   border: '1px solid white',
   boxShadow:
     '0px 0px 3px 1px rgba(0,0,0,0.75), inset 0px 0px 3px 0px rgba(0,0,0,0.45)',
+};
+
+export const menuStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'flex-start',
+  alignItems: 'flex-start',
+  flexDirection: 'column',
+  color: '#FFF',
+  gap: '.7rem',
+};
+
+export const spanStyle: React.CSSProperties = {
+  color: '#22c55e',
+  fontWeight: 'bold',
+  fontSize: '1.2rem',
+};
+
+export const smallSpanStyle: React.CSSProperties = {
+  color: '#22c55e',
+  fontWeight: 'bold',
+  fontSize: '.8rem',
 };

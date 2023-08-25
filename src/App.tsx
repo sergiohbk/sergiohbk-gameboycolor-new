@@ -1,76 +1,76 @@
-import React from 'react';
-import {
-  GbcScreen,
-  GbcPrincipalDataZone,
-  CPUdataZone,
-  UploadBootromZone,
-  GbcDebugConfig,
-} from './Components/firstpanel';
-import { Parallax } from 'react-parallax';
-import { useTheme } from '@mui/material/styles';
-import './App.css';
+import Screen from './Components/main';
+import UploadBootrom from './Components/loadroms';
 import Grid from '@mui/material/Unstable_Grid2';
 import Item from '@mui/material/Unstable_Grid2';
+import CpuData from './Components/cpudata';
+import { useState, useEffect } from 'react';
+import { debugengine as DEBUGENGINE } from './GAMEBOYCOLOR/components';
+import PpuData from './Components/ppudata';
+import MemoryData from './Components/memorydata';
+import UploadGame from './Components/loadgame';
 
 function App() {
-  const theme = useTheme();
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setVisible(DEBUGENGINE.DEBUG);
+  }, [visible]);
+
   return (
-    <div className='App'>
-      <Parallax
+    <div>
+      <div style={{ width: '100%' }}>
+        <Screen />
+      </div>
+      <div
         style={{
-          backgroundColor: theme.palette.background.default,
-          height: '100%',
-          position: 'relative',
-          padding: '1rem',
+          display: 'flex',
+          justifyContent: 'center',
         }}
-        strength={100}
       >
         <Grid
           container
           spacing={3}
-          display={'flex'}
-          justifyContent={'center'}
-          alignContent={'space-around'}
           height={'100%'}
-          flexGrow={1}
+          columns={3}
+          minHeight={160}
+          margin={2}
         >
-          <Grid xs={12} md={3} lg={2}>
+          <Grid display='flex' justifyContent='center' alignItems='center'>
             <Item>
-              <GbcPrincipalDataZone />
+              <PpuData />
             </Item>
           </Grid>
-          <Grid xs={12} md={6} lg={8}>
+          <Grid display='flex' justifyContent='center' alignItems='center'>
             <Item>
-              <GbcScreen />
+              <UploadBootrom />
             </Item>
           </Grid>
-          <Grid xs={12} md={3} lg={2}>
+          <Grid display='flex' justifyContent='center' alignItems='center'>
             <Item>
-              <CPUdataZone />
+              <UploadGame />
             </Item>
           </Grid>
-          <Grid xs={12} md={3} lg={2}>
+
+          <Grid
+            justifyContent='center'
+            alignItems='center'
+            display={visible ? 'flex' : 'none'}
+          >
             <Item>
-              <GbcDebugConfig />
+              <CpuData />
             </Item>
           </Grid>
-          <Grid xs={12} md={3} lg={2}>
+          <Grid
+            justifyContent='center'
+            alignItems='center'
+            display={visible ? 'flex' : 'none'}
+          >
             <Item>
-              <UploadBootromZone />
+              <MemoryData />
             </Item>
           </Grid>
         </Grid>
-      </Parallax>
-      <Parallax
-        style={{
-          backgroundColor: theme.palette.background.paper,
-          height: '100%',
-          position: 'relative',
-        }}
-        strength={100}
-      >
-        <section></section>
-      </Parallax>
+      </div>
     </div>
   );
 }

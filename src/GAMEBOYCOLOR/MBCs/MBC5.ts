@@ -1,9 +1,8 @@
 import MBC from './MBC';
-import Cartridge from '../cartridge';
 
 class MBC5 extends MBC {
-  constructor(cardridge: Cartridge) {
-    super(cardridge);
+  constructor() {
+    super();
     this.name = 'MBC5';
   }
 }

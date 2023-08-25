@@ -30,7 +30,7 @@ export const baseTheme = createTheme({
     },
     background: {
       default: '#000000',
-      paper: '#121414',
+      paper: '#27272a',
     },
     text: {
       primary: '#FFFFFF',

@@ -1,40 +1,29 @@
 import MemoryData from './MemoryData';
-import MBC1 from './MBCs/MBC1';
-import MBC3 from './MBCs/MBC3';
-import MBC30 from './MBCs/MBC30';
-import MBC5 from './MBCs/MBC5';
-import ROMonly from './MBCs/ROMonly';
-import Bootrom from './bootrom';
-import FLAGS from './generalFlags';
-
-enum MemState {
-  WRITE = 'WRITE',
-  READ = 'READ',
-  WAIT = 'WAIT',
-  RESET = 'RESET',
-}
+import { cartridge as CARTRIDGE } from './components';
+import MBC from './MBCs/MBC';
+import GAMEBOYCOLOR from './gbc';
+import { bootrom as BOOTROM } from './components';
 
 class Memory extends MemoryData {
-  //----DEPENDENCIES----
-  bootrom: Bootrom;
-  //----STATE----
-  MEMSTATE: MemState;
-
-  constructor(flags: FLAGS, bootrom: Bootrom) {
-    super(flags);
-    this.bootrom = bootrom;
-
-    //this.resetAllMemory();
-    this.MEMSTATE = MemState.WAIT;
+  constructor() {
+    super();
+    this.resetAllMemory();
   }
 
-  setMBC(mbc: MBC1 | MBC3 | MBC5 | MBC30 | ROMonly) {
+  createMBC() {
+    if (CARTRIDGE.cardType[0] === null) {
+      console.error('MBC not supported');
+      return;
+    }
+
+    this.setMBC(new CARTRIDGE.cardType[0]());
+  }
+
+  private setMBC(mbc: MBC) {
     this.MemoryMap = mbc;
   }
 
   resetAllMemory() {
-    this.MEMSTATE = MemState.RESET;
-    this.stackMem.fill(0xff);
     this.VRAM[0].fill(0xff);
     this.VRAM[1].fill(0xff);
     this.WORKRAM[0].fill(0xff);
@@ -47,13 +36,11 @@ class Memory extends MemoryData {
     this.WORKRAM[7].fill(0xff);
     this.OAM.fill(0xff);
     this.HIGHRAM.fill(0xff);
-    this.IE = 0;
+    this.IOregisters.fill(0xff);
   }
 
   write(address: number, value: number) {
-    this.MEMSTATE = MemState.WRITE;
-    if (address > 0xffff)
-      throw new Error('Address is greater than 0xffff');
+    if (address > 0xffff) throw new Error('Address is greater than 0xffff');
     //----ROM BANK 00----
     if (address <= 0x3fff) {
       this.MemoryMap!.writeRomBank00(address, value);
@@ -66,8 +53,9 @@ class Memory extends MemoryData {
     }
     //----VIDEO RAM----
     if (address >= 0x8000 && address <= 0x9fff) {
-      if (this.flags.GBCmode)
-        this.VRAM[this.VBK & 0x1][address - 0x8000] = value;
+      if (GAMEBOYCOLOR.GAMEBOYCOLORMODE)
+        this.VRAM[this.IOregisters[this.ioNames.VBK] & 0x1][address - 0x8000] =
+          value;
       else this.VRAM[0][address - 0x8000] = value;
       return;
     }
@@ -83,11 +71,13 @@ class Memory extends MemoryData {
     }
     //----SWITCHABLE WORK RAM----
     if (address >= 0xd000 && address <= 0xdfff) {
-      if (this.flags.GBCmode) {
-        if ((this.WRAMBank & 0b111) === 0)
+      if (GAMEBOYCOLOR.GAMEBOYCOLORMODE) {
+        if ((this.IOregisters[this.ioNames.SVBK] & 0b111) === 0)
           this.WORKRAM[1][address - 0xd000] = value;
         else
-          this.WORKRAM[this.WRAMBank][address - 0xd000] = value;
+          this.WORKRAM[this.IOregisters[this.ioNames.SVBK] & 0b111][
+            address - 0xd000
+          ] = value;
       } else this.WORKRAM[1][address - 0xd000] = value;
       return;
     }
@@ -96,12 +86,13 @@ class Memory extends MemoryData {
       if (address >= 0xe000 && address <= 0xedff)
         this.WORKRAM[0][address - 0xe000] = value;
       else if (address >= 0xee00 && address <= 0xfdff)
-        if (this.flags.GBCmode) {
-          if ((this.WRAMBank & 0b111) === 0)
+        if (GAMEBOYCOLOR.GAMEBOYCOLORMODE) {
+          if ((this.IOregisters[this.ioNames.SVBK] & 0b111) === 0)
             this.WORKRAM[1][address - 0xd000] = value;
           else
-            this.WORKRAM[this.WRAMBank][address - 0xd000] =
-              value;
+            this.WORKRAM[this.IOregisters[this.ioNames.SVBK] & 0b111][
+              address - 0xd000
+            ] = value;
         } else this.WORKRAM[1][address - 0xee00] = value;
       return;
     }
@@ -116,11 +107,7 @@ class Memory extends MemoryData {
     }
     //----IO REGISTERS----
     if (address >= 0xff00 && address <= 0xff7f) {
-      if (address >= 0xff30 && address <= 0xff3f)
-        this.wavePatternRAM[address - 0xff30] = value;
-      if (this.ioHandlers[address])
-        this.ioHandlers[address].write(address, value);
-      else this.unmappedIOHandler[address - 0xff00] = value;
+      this.IOwrite(address - 0xff00, value);
     }
     //----HIGH RAM----
     if (address >= 0xff80 && address <= 0xfffe) {
@@ -129,21 +116,18 @@ class Memory extends MemoryData {
     }
     //----INTERRUPT ENABLE REGISTER----
     if (address === 0xffff) {
-      this.IE = value & 0x1f;
-      return;
+      this.IOwrite(0xff, value);
     }
   }
 
   read(address: number): number {
-    this.MEMSTATE = MemState.READ;
     //----BOOT ROM----
     if (
-      this.bootrom.isActive &&
+      BOOTROM.isActive &&
       ((address >= 0x0 && address <= 0xff) ||
         (address >= 0x200 && address <= 0x8ff))
     ) {
-      if (address === 0x100) this.bootrom.isActive = false;
-      return this.bootrom.rom![address];
+      return BOOTROM.rom![address];
     }
 
     //----ROM BANK 00----
@@ -156,8 +140,10 @@ class Memory extends MemoryData {
     }
     //----VIDEO RAM----
     if (address >= 0x8000 && address <= 0x9fff) {
-      if (this.flags.GBCmode)
-        return this.VRAM[this.VBK & 0x1][address - 0x8000];
+      if (GAMEBOYCOLOR.GAMEBOYCOLORMODE)
+        return this.VRAM[this.IOregisters[this.ioNames.VBK] & 0b1][
+          address - 0x8000
+        ];
       else return this.VRAM[0][address - 0x8000];
     }
     //----EXTERNAL RAM----
@@ -170,24 +156,26 @@ class Memory extends MemoryData {
     }
     //----SWITCHABLE WORK RAM----
     if (address >= 0xd000 && address <= 0xdfff) {
-      if (this.flags.GBCmode) {
-        if (this.WRAMBank === 0)
-          return this.WORKRAM[1][address - 0xd000];
-        else
-          return this.WORKRAM[this.WRAMBank][address - 0xd000];
-      } else return this.WORKRAM[1][address - 0xd000];
+      if (GAMEBOYCOLOR.GAMEBOYCOLORMODE) {
+        if ((this.IOregisters[this.ioNames.SVBK] & 0b111) !== 0)
+          return this.WORKRAM[this.IOregisters[this.ioNames.SVBK] & 0b111][
+            address - 0xd000
+          ];
+      }
+      return this.WORKRAM[1][address - 0xd000];
     }
     //----ECHO RAM----
     if (address >= 0xe000 && address <= 0xfdff) {
       if (address >= 0xe000 && address <= 0xedff)
         return this.WORKRAM[0][address - 0xe000];
       else if (address >= 0xee00 && address <= 0xfdff)
-        if (this.flags.GBCmode) {
-          if (this.WRAMBank === 0)
-            return this.WORKRAM[1][address - 0xd000];
-          else
-            return this.WORKRAM[this.WRAMBank][address - 0xd000];
-        } else return this.WORKRAM[1][address - 0xee00];
+        if (GAMEBOYCOLOR.GAMEBOYCOLORMODE) {
+          if ((this.IOregisters[this.ioNames.SVBK] & 0b111) !== 0)
+            return this.WORKRAM[this.IOregisters[this.ioNames.SVBK] & 0b111][
+              address - 0xd000
+            ];
+        }
+      return this.WORKRAM[1][address - 0xee00];
     }
     //----SPRITE ATTRIBUTE TABLE-----
     if (address >= 0xfe00 && address <= 0xfe9f) {
@@ -201,18 +189,14 @@ class Memory extends MemoryData {
     }
     //----IO REGISTERS----
     if (address >= 0xff00 && address <= 0xff7f) {
-      if (address >= 0xff30 && address <= 0xff3f)
-        return this.wavePatternRAM[address - 0xff30];
-      if (this.ioHandlers[address])
-        return this.ioHandlers[address].read(address);
-      else return this.unmappedIOHandler[address - 0xff00];
+      return this.IOread(address - 0xff00);
     }
     //----HIGH RAM----
     if (address >= 0xff80 && address <= 0xfffe) {
       return this.HIGHRAM[address - 0xff80];
     }
     //----INTERRUPT ENABLE REGISTER----
-    if (address === 0xffff) return this.IE | 0xe0;
+    if (address === 0xffff) return this.IOread(0xff);
 
     return 0xff;
   }

@@ -1,42 +1,28 @@
-import { Sprite, Texture } from 'pixi.js';
-import Components from './components';
-import ROMonly from './MBCs/ROMonly';
+import { Application, ICanvas, Sprite, Texture } from 'pixi.js';
+import {
+  cpu as CPU,
+  ppu as PPU,
+  bootrom as BOOTROM,
+  cycles as TIME,
+  cartridge as CARTRIDGE,
+  apu as APU,
+} from './components';
 
-enum GBCstate {
-  OFF = 'OFF',
-  ON = 'ON',
-  LOADBOOTROM = 'LOAD BOOTROM',
-  LOADGAME = 'LOAD GAME',
-  RUNNING = 'RUNNING',
-  PAUSED = 'PAUSED',
-  STOPPED = 'STOPPED',
-  RESET = 'RESET',
-}
+class GAMEBOYCOLOR {
+  maxFps: number = 59.7;
+  fps: number = 0;
+  isStarted: boolean = false;
+  paused: boolean = false;
+  GAMEBOYCOLORMODE: boolean = false;
 
-class GAMEBOYCOLOR extends Components {
-  fps: number;
-  maxFps: number;
-  isStarted: boolean;
-  paused: boolean;
-  GBCSTATE: GBCstate;
-  //----screen----
   sprite: Sprite;
   textureBuffer: Uint8Array;
-  screenwidth: number;
-  screenheigth: number;
+  screenwidth: number = 160;
+  screenheigth: number = 144;
   texture: Texture;
+  PIXI: Application | null;
 
   constructor() {
-    super();
-
-    this.maxFps = 59.7;
-    this.isStarted = false;
-    this.fps = 0;
-    this.paused = false;
-    this.GBCSTATE = GBCstate.OFF;
-    //pantalla
-    this.screenheigth = 144;
-    this.screenwidth = 160;
     this.textureBuffer = new Uint8Array(
       this.screenwidth * this.screenheigth * 4,
     ).fill(0xff);
@@ -46,16 +32,20 @@ class GAMEBOYCOLOR extends Components {
       this.screenheigth,
     );
     this.sprite = new Sprite(this.texture);
+    this.PIXI = null;
   }
 
   start() {
-    if (this.isStarted) return;
-    if (!this.PIXI) return;
-    this.GBCSTATE = GBCstate.ON;
+    if (this.isStarted) {
+      return;
+    }
+    if (!this.PIXI) {
+      return;
+    }
+
     this.isStarted = true;
-    if (!this.bootrom.isBootromLoaded)
-      this.cpu.inicializeDefaultValuesGB();
-    //inicializarlos en caso de gameboy color
+    if (!BOOTROM.isBootromLoaded) CPU.inicializeDefaultValuesGB();
+    /* diferente para gameboy color*/
 
     this.PIXI.stage.addChild(this.sprite);
     this.PIXI.ticker.maxFPS = this.maxFps;
@@ -63,75 +53,53 @@ class GAMEBOYCOLOR extends Components {
   }
 
   update(delta: number) {
-    while (
-      this.cycles.getCycles() <= this.cycles.cyclesToFrame
-    ) {
-      this.cpu.tick();
-      this.ppu.tick();
+    while (TIME.cycles <= TIME.ToFrame) {
+      CPU.tick();
+      PPU.tick();
+      APU.tick();
     }
 
-    this.textureBuffer.set(this.ppu.getImageFrame());
+    this.textureBuffer.set(PPU.getImageFrame());
 
     this.sprite.texture.update();
 
     this.fps = Math.round((1 / delta) * this.PIXI!.ticker.FPS);
-    this.cycles.setCycles(
-      (this.cycles.cycles %= this.cycles.cyclesToFrame),
-    );
-    this.cycles.updateToNewFrame();
+    TIME.setCycles((TIME.cycles %= TIME.ToFrame));
+    TIME.updateToNewFrame();
   }
 
   stop() {
-    this.GBCSTATE = GBCstate.STOPPED;
     this.isStarted = false;
     this.fps = 0;
     this.reset();
   }
 
   load(game: ArrayBuffer) {
-    this.GBCSTATE = GBCstate.LOADGAME;
     const rom = new Uint8ClampedArray(game);
-    this.cartridge.setRom(rom);
-    this.setMBCtoMemory();
+    CARTRIDGE.setRom(rom);
   }
 
   loadBootrom(bootromvar: ArrayBuffer) {
-    this.GBCSTATE = GBCstate.LOADBOOTROM;
     const rom = new Uint8ClampedArray(bootromvar);
-    this.bootrom.setRom(rom);
-    this.setDefaultMBCtoMemory();
+    BOOTROM.setRom(rom);
   }
 
   pause() {
-    this.GBCSTATE = GBCstate.PAUSED;
     this.paused = true;
     this.fps = 0;
   }
 
   resume() {
-    this.GBCSTATE = GBCstate.RUNNING;
     this.paused = false;
   }
 
   reset() {
-    this.GBCSTATE = GBCstate.RESET;
-    super.reset();
     this.fps = 0;
   }
 
-  setMBCtoMemory() {
-    if (this.cartridge.cardType[0] === null) {
-      console.error('MBC not supported');
-      return;
-    }
-    this.memory.MemoryMap = new this.cartridge.cardType[0](
-      this.cartridge,
-    );
-  }
-
-  setDefaultMBCtoMemory() {
-    this.memory.MemoryMap = new ROMonly(this.cartridge);
+  setPixiCanvas(PIXI: Application<ICanvas>) {
+    this.PIXI = PIXI;
   }
 }
-const gbc = new GAMEBOYCOLOR();
-export default gbc;
+const GBC = new GAMEBOYCOLOR();
+export default GBC;

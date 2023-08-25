@@ -1,3 +1,5 @@
-class APU {}
+class APU {
+  tick() {}
+}
 
 export default APU;

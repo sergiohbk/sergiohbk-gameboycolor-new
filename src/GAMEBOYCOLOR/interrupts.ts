@@ -1,62 +1,60 @@
-import CPU from './cpu';
-import CYCLES from './cycles';
-import Memory from './memory';
-
+import {
+  memory as MEMORY,
+  cpu as CPU,
+  cycles as TIME,
+} from './components';
 class INTERRUPTS {
-  //----DEPENDENCIES----
-  memory: Memory;
-  cpu: CPU;
-  cycles: CYCLES;
-
-  constructor(memory: Memory, cpu: CPU, cycles: CYCLES) {
-    this.memory = memory;
-    this.cpu = cpu;
-    this.cycles = cycles;
-  }
-
   tick() {
-    const interrupt = this.memory.IF & this.memory.IE & 0x1f;
+    const interrupt =
+      MEMORY.IE & MEMORY.IOregisters[MEMORY.ioNames.IF] & 0x1f;
 
     if (interrupt === 0) return;
 
-    this.haltExit();
+    CPU.haltExit();
 
-    if (!this.memory.flags.IME) return;
+    if (!CPU.IME) return;
 
-    this.cpu.stackPush16bit(this.cpu.PC);
-    this.memory.flags.IME = false;
-    this.cycles.sumCycles(20);
+    CPU.stackPush16bit(CPU.PC);
+    CPU.IME = false;
+    TIME.sumCycles(20);
 
     switch (interrupt) {
       case interrupt & 0b1:
-        this.cpu.PC = 0x40;
-        this.memory.IF = this.memory.IF & 0xfe;
+        CPU.PC = 0x40;
+        MEMORY.IOwrite(
+          MEMORY.ioNames.IF,
+          MEMORY.IOread(MEMORY.ioNames.IF) & 0xfe,
+        );
         break;
       case interrupt & 0b10:
-        this.cpu.PC = 0x48;
-        this.memory.IF = this.memory.IF & 0xfd;
+        CPU.PC = 0x48;
+        MEMORY.IOwrite(
+          MEMORY.ioNames.IF,
+          MEMORY.IOread(MEMORY.ioNames.IF) & 0xfd,
+        );
         break;
       case interrupt & 0b100:
-        this.cpu.PC = 0x50;
-        this.memory.IF = this.memory.IF & 0xfb;
+        CPU.PC = 0x50;
+        MEMORY.IOwrite(
+          MEMORY.ioNames.IF,
+          MEMORY.IOread(MEMORY.ioNames.IF) & 0xfb,
+        );
         break;
       case interrupt & 0b1000:
-        this.cpu.PC = 0x58;
-        this.memory.IF = this.memory.IF & 0xf7;
+        CPU.PC = 0x58;
+        MEMORY.IOwrite(
+          MEMORY.ioNames.IF,
+          MEMORY.IOread(MEMORY.ioNames.IF) & 0xf7,
+        );
         break;
       case interrupt & 0b10000:
-        this.cpu.PC = 0x60;
-        this.memory.IF = this.memory.IF & 0xef;
+        CPU.PC = 0x60;
+        MEMORY.IOwrite(
+          MEMORY.ioNames.IF,
+          MEMORY.IOread(MEMORY.ioNames.IF) & 0xef,
+        );
         break;
     }
-  }
-
-  haltExit() {
-    if (this.memory.flags.CPUhalt) {
-      this.memory.flags.CPUhalt = false;
-      this.cycles.sumCycles(4);
-    }
-    //halt bug implement here
   }
 }
 

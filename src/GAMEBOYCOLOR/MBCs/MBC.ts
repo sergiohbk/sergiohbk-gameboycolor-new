@@ -1,4 +1,4 @@
-import Cartridge from '../cartridge';
+import { cartridge as CARTRIDGE } from '../components';
 
 interface MBC {
   name: string;
@@ -13,17 +13,15 @@ interface MBC {
 }
 
 abstract class MBC implements MBC {
-  cartridge: Cartridge;
-  constructor(cardridge: Cartridge) {
+  constructor() {
     this.name = 'MBC';
-    this.cartridge = cardridge;
   }
 
   readRomBank00(address: number): number {
-    return this.cartridge.rom![address];
+    return CARTRIDGE.rom![address];
   }
   readRomBankNN(address: number): number {
-    return this.cartridge.rom![address];
+    return CARTRIDGE.rom![address];
   }
   externalRamRead(address: number): number {
     return 0xff;

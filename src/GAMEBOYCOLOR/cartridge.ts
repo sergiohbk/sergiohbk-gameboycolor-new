@@ -1,8 +1,8 @@
-import { MBC1 } from './MBCs/MBC1';
-import { MBC3 } from './MBCs/MBC3';
-import { MBC5 } from './MBCs/MBC5';
-import { ROMonly } from './MBCs/ROMonly';
-import { createRamBanks, getBanksFromRom } from './tools/data';
+import MBC1 from './MBCs/MBC1';
+import MBC3 from './MBCs/MBC3';
+import MBC5 from './MBCs/MBC5';
+import ROMonly from './MBCs/ROMonly';
+import { memory as DATA } from './components';
 
 class Cartridge {
   title: string;
@@ -18,7 +18,21 @@ class Cartridge {
   isRomLoaded: boolean;
 
   constructor() {
-    this.title = '';
+    this.title = 'No Game Insert';
+    this.rom = new Uint8ClampedArray(0x8000).fill(0xff);
+    this.compatibility = '';
+    this.license = '';
+    this.cardType = [ROMonly, false, false, false, false];
+    this.romBanks = [];
+    this.romBanksCount = 0;
+    this.checkSumValid = false;
+    this.ramBanks = []; // A000 - BFFF
+    this.ramBanksCount = 0;
+    this.isRomLoaded = false;
+  }
+
+  setDefault() {
+    this.title = 'No Game Insert';
     this.rom = new Uint8ClampedArray(0x8000).fill(0xff);
     this.compatibility = '';
     this.license = '';
@@ -38,11 +52,12 @@ class Cartridge {
     this.compatibility = this.getCompatibility();
     this.license = this.getLicense()!;
     this.cardType = this.getCardType();
-    this.romBanks = getBanksFromRom(this.rom, 0x4000);
+    this.romBanks = this.getBanksFromRom();
     this.romBanksCount = this.romBanks.length;
     this.checkSumValid = checkSum(this.rom);
     this.ramBanksCount = this.getRamBanksNumber();
-    this.ramBanks = createRamBanks(this.ramBanksCount, 0x2000);
+    this.ramBanks = this.createRamBanks();
+    DATA.createMBC();
   }
 
   getTitle(): string {
@@ -112,13 +127,13 @@ class Cartridge {
     return [null, false, false, false, false];
   }
 
-  SGBEnhancedCompatibility(): boolean {
+  isSGBEnhancedCompatibility(): boolean {
     return (
       this.rom![0x146] === 0x03 && this.rom![0x14b] === 0x33
     );
   }
 
-  destinationCode(): string {
+  getDestinationCode(): string {
     return this.rom![0x14a] === 0x00
       ? 'Japanese'
       : 'Non-Japanese';
@@ -131,6 +146,23 @@ class Cartridge {
     if (this.rom![0x149] === 0x04) return 16;
     if (this.rom![0x149] === 0x05) return 8;
     return 0;
+  }
+
+  getBanksFromRom(): Uint8ClampedArray[] {
+    const banks: Uint8ClampedArray[] = [];
+    const sliceSize = 0x4000;
+    for (let i = 0; i < this.rom.length; i += sliceSize) {
+      banks.push(this.rom.slice(i, i + sliceSize));
+    }
+    return banks;
+  }
+
+  createRamBanks(): Uint8ClampedArray[] {
+    const ramBanks: Uint8ClampedArray[] = [];
+    for (let i = 0; i < this.ramBanksCount; i++) {
+      ramBanks.push(new Uint8ClampedArray(0x2000));
+    }
+    return ramBanks;
   }
 }
 

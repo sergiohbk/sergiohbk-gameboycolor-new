@@ -1,13 +1,11 @@
-import { Application } from 'pixi.js';
-import Memory from './memory';
-import CYCLES from './cycles';
 import Background from './PPUelements/background';
 import Sprites from './PPUelements/sprites';
 import Window from './PPUelements/window';
-import FLAGS from './generalFlags';
 import PIXEL from './PPUelements/pixel';
+import GAMEBOYCOLOR from './gbc';
+import { memory as MEMORY, cycles as TIME } from './components';
 
-enum RENDER {
+export enum RENDER {
   HBLANK = 0,
   VBLANK = 1,
   OAM = 2,
@@ -15,11 +13,6 @@ enum RENDER {
 }
 
 class PPU {
-  //----DEPENDENCIES----
-  memory: Memory;
-  PIXI: Application | null;
-  cycles: CYCLES;
-  flags: FLAGS;
   //----RENDER----
   STATE: RENDER;
   IMAGEBUFFER: Uint8Array;
@@ -27,17 +20,10 @@ class PPU {
   SPRITES: Sprites;
   WINDOW: Window;
   //----DATA----
-  SCREENWIDTH: number;
-  SCREENHEIGHT: number;
+  SCREENWIDTH: number = 160;
+  SCREENHEIGHT: number = 144;
 
-  constructor(memory: Memory, cycles: CYCLES, flags: FLAGS) {
-    this.memory = memory;
-    this.PIXI = null;
-    this.cycles = cycles;
-    this.flags = flags;
-    //---------datos--------
-    this.SCREENWIDTH = 160;
-    this.SCREENHEIGHT = 144;
+  constructor() {
     //----------------------
     this.STATE = RENDER.HBLANK;
     this.IMAGEBUFFER = new Uint8Array(
@@ -48,98 +34,96 @@ class PPU {
     this.WINDOW = new Window();
   }
 
-  assignPixi(PIXI: Application) {
-    this.PIXI = PIXI;
-  }
-
-  getStateInLCDC() {
-    if ((this.memory.LCDCSTAT & 0b11) === 0)
+  getStateInSTAT() {
+    if ((MEMORY.IOregisters[MEMORY.ioNames.STAT] & 0b11) === 0)
       this.STATE = RENDER.HBLANK;
-    if ((this.memory.LCDCSTAT & 0b11) === 1)
+    if ((MEMORY.IOregisters[MEMORY.ioNames.STAT] & 0b11) === 1)
       this.STATE = RENDER.VBLANK;
-    if ((this.memory.LCDCSTAT & 0b11) === 0)
+    if ((MEMORY.IOregisters[MEMORY.ioNames.STAT] & 0b11) === 2)
       this.STATE = RENDER.OAM;
-    if ((this.memory.LCDCSTAT & 0b11) === 0)
+    if ((MEMORY.IOregisters[MEMORY.ioNames.STAT] & 0b11) === 3)
       this.STATE = RENDER.TRANSFER;
   }
 
-  setStateInLCDC() {
-    this.memory.LCDCSTAT =
-      (this.memory.LCDCSTAT & 0xfc) | this.STATE;
+  setStateInSTAT() {
+    MEMORY.IOwrite(
+      MEMORY.ioNames.STAT,
+      (MEMORY.IOregisters[MEMORY.ioNames.STAT] & 0b11111100) | this.STATE,
+    );
   }
 
   tick() {
-    this.cycles.updateCyclesCounter();
-    //testear si continuaria normal el apagar la pantalla
-    if (this.memory.LCDC & 0x80) {
-      if (
-        this.cycles.cyclesPPUcounter >= this.cycles.cyclesToMode
-      ) {
-        //-------HBLANK-------
-        if (this.STATE === RENDER.HBLANK) {
-          this.generateScanline();
-          this.cycles.setHblankCycles();
+    if ((MEMORY.IOread(MEMORY.ioNames.LCDC) & 0x80) === 0) return;
+    TIME.updateCyclesCounter();
+    if (TIME.PPUcounter >= TIME.ToMode) {
+      //-------HBLANK-------
+      if (this.STATE === RENDER.HBLANK) {
+        this.generateScanline();
+        TIME.setPPUmode(0);
 
-          if (this.memory.LY < 143) this.STATE = RENDER.OAM;
-          else this.STATE = RENDER.VBLANK;
+        if (MEMORY.IOread(MEMORY.ioNames.LY) < 143) this.STATE = RENDER.OAM;
+        else this.STATE = RENDER.VBLANK;
 
-          this.setStateInLCDC();
-          return;
-        }
-        //-------VBLANK-------
-        if (this.STATE === RENDER.VBLANK) {
-          this.cycles.setVblankCycles();
-          this.memory.LY += 1;
-          //stat calculation
-          if (this.memory.LY === this.SCREENWIDTH)
-            this.memory.IF |= 0x1;
-          if (this.memory.LY === 153) this.STATE = RENDER.OAM;
+        this.setStateInSTAT();
+        return;
+      }
+      //-------VBLANK-------
+      if (this.STATE === RENDER.VBLANK) {
+        TIME.setPPUmode(1);
+        MEMORY.IOwrite(MEMORY.ioNames.LY, MEMORY.IOread(MEMORY.ioNames.LY) + 1);
+        //stat calculation
+        if (MEMORY.IOread(MEMORY.ioNames.LY) === this.SCREENWIDTH)
+          MEMORY.IOwrite(
+            MEMORY.ioNames.IF,
+            MEMORY.IOread(MEMORY.ioNames.IF) | 0b1,
+          );
+        if (MEMORY.IOread(MEMORY.ioNames.LY) === 153) this.STATE = RENDER.OAM;
 
-          this.setStateInLCDC();
-          return;
-        }
-        //--------OAM-------
-        if (this.STATE === RENDER.OAM) {
-          if (this.memory.LY === 153) {
-            this.memory.LY = 0;
-          } else {
-            this.memory.LY += 1;
-          }
+        this.setStateInSTAT();
+        return;
+      }
+      //--------OAM-------
+      if (this.STATE === RENDER.OAM) {
+        if (MEMORY.IOread(MEMORY.ioNames.LY) === 153)
+          MEMORY.IOwrite(MEMORY.ioNames.LY, 0);
+        else
+          MEMORY.IOwrite(
+            MEMORY.ioNames.LY,
+            MEMORY.IOread(MEMORY.ioNames.LY) + 1,
+          );
 
-          this.cycles.setOAMCycles();
-          //do a stat interrupt check
-          this.STATE = RENDER.TRANSFER;
-          this.setStateInLCDC();
-          return;
-        }
-        //------TRANSFER------
-        if (this.STATE === RENDER.TRANSFER) {
-          this.cycles.setTransferCycles();
-          this.setStateInLCDC();
-        }
+        TIME.setPPUmode(2);
+        //do a stat interrupt check
+        this.STATE = RENDER.TRANSFER;
+        this.setStateInSTAT();
+        return;
+      }
+      //------TRANSFER------
+      if (this.STATE === RENDER.TRANSFER) {
+        TIME.setPPUmode(3);
+        this.setStateInSTAT();
       }
     }
   }
 
   generateScanline() {
-    if (this.memory.LCDC & 0x1 || this.flags.GBCmode)
+    if (
+      MEMORY.IOread(MEMORY.ioNames.LCDC) & 0x1 ||
+      GAMEBOYCOLOR.GAMEBOYCOLORMODE
+    )
       this.renderBackground();
-    if (this.memory.LCDC & 0x20) this.renderWindow();
-    if (this.memory.LCDC & 0x2) this.renderSprites();
+    if (MEMORY.IOread(MEMORY.ioNames.LCDC) & 0x20) this.renderWindow();
+    if (MEMORY.IOread(MEMORY.ioNames.LCDC) & 0x2) this.renderSprites();
 
     this.drawToImageBuffer(this.packingScanline());
   }
 
   renderBackground() {
     const LCDCindexes = this.lcdcMemoryIndexes();
-    this.setTileMap(LCDCindexes.tilemap);
+    this.setTileMap(LCDCindexes.tilemap); //revisar su uso
     for (let x = 0; x < this.SCREENWIDTH; x++) {
       const coords2Dpixel = this.pixelCoords(x);
-      const coords2Dtile = this.tileCoords(
-        coords2Dpixel.x,
-        coords2Dpixel.y,
-        8,
-      );
+      const coords2Dtile = this.tileCoords(coords2Dpixel.x, coords2Dpixel.y, 8);
       const coords1Dtile = this.coordsToIndex(
         coords2Dtile.x,
         coords2Dtile.y,
@@ -152,29 +136,17 @@ class PPU {
       );
 
       const tileIndex = this.BACKGROUND.tilemap[coords1Dtile];
-      const tileCharBaseAddr =
-        LCDCindexes.background + tileIndex * 16;
+      const tileCharBaseAddr = LCDCindexes.background + tileIndex * 16;
       const byte1 =
-        this.memory.VRAM[0][
-          tileCharBaseAddr + coords2DpixelInTile.y * 2
-        ];
+        MEMORY.VRAM[0][tileCharBaseAddr + coords2DpixelInTile.y * 2];
       const byte2 =
-        this.memory.VRAM[0][
-          tileCharBaseAddr + coords2DpixelInTile.y * 2 + 1
-        ];
+        MEMORY.VRAM[0][tileCharBaseAddr + coords2DpixelInTile.y * 2 + 1];
 
       const pixelBitIndex = 7 - coords2DpixelInTile.x;
-      const colorIndex = this.getColorIndex(
-        byte1,
-        byte2,
-        pixelBitIndex,
-      );
+      const colorIndex = this.getColorIndex(byte1, byte2, pixelBitIndex);
       const backgroundPalette = this.getBackgroundPalette();
 
-      const color = this.getColorFromIndex(
-        colorIndex,
-        backgroundPalette,
-      );
+      const color = this.getColorFromIndex(colorIndex, backgroundPalette);
 
       const pixel = new PIXEL(
         color[0],
@@ -204,7 +176,6 @@ class PPU {
     for (let i = 0; i < this.BACKGROUND.scanline.length; i++) {
       scanline[i] = this.BACKGROUND.scanline[i];
     }
-    console.log(scanline);
     return scanline;
   }
 
@@ -212,7 +183,7 @@ class PPU {
     for (let x = 0; x < this.SCREENWIDTH; x++) {
       const pixel = scanline[x];
       const indexBuffer =
-        (this.memory.LY * this.SCREENWIDTH + x) * 4;
+        (MEMORY.IOread(MEMORY.ioNames.LY) * this.SCREENWIDTH + x) * 4;
 
       this.IMAGEBUFFER[indexBuffer] = pixel.r;
       this.IMAGEBUFFER[indexBuffer + 1] = pixel.g;
@@ -235,8 +206,10 @@ class PPU {
    */
   pixelCoords(x: number) {
     return {
-      y: (this.memory.LY + this.memory.SCY) & 0xff,
-      x: (x + this.memory.SCX) & 0xff,
+      y:
+        (MEMORY.IOread(MEMORY.ioNames.LY) + MEMORY.IOread(MEMORY.ioNames.SCY)) &
+        0xff,
+      x: (x + MEMORY.IOread(MEMORY.ioNames.SCX)) & 0xff,
     };
   }
 
@@ -268,8 +241,8 @@ class PPU {
    */
   lcdcMemoryIndexes() {
     return {
-      tilemap: this.memory.LCDC & 0x8 ? 0x9c00 : 0x9800,
-      background: this.memory.LCDC & 0x10 ? 0x8000 : 0x8800,
+      tilemap: MEMORY.IOread(MEMORY.ioNames.LCDC) & 0x8 ? 0x9c00 : 0x9800,
+      background: MEMORY.IOread(MEMORY.ioNames.LCDC) & 0x10 ? 0x8000 : 0x8800,
     };
   }
 
@@ -286,11 +259,7 @@ class PPU {
     return y * width + x;
   }
 
-  getColorIndex(
-    lsbByte: number,
-    msbByte: number,
-    pixelBitIndex: number,
-  ) {
+  getColorIndex(lsbByte: number, msbByte: number, pixelBitIndex: number) {
     const lsb = (lsbByte >> pixelBitIndex) & 0x1;
     const msb = (msbByte >> pixelBitIndex) & 0x1;
     return (msb << 1) | lsb;
@@ -298,10 +267,10 @@ class PPU {
 
   getBackgroundPalette() {
     return [
-      this.memory.BGP & 0x3,
-      (this.memory.BGP >> 2) & 0x3,
-      (this.memory.BGP >> 4) & 0x3,
-      (this.memory.BGP >> 6) & 0x3,
+      MEMORY.IOread(MEMORY.ioNames.BGP) & 0x3,
+      (MEMORY.IOread(MEMORY.ioNames.BGP) >> 2) & 0x3,
+      (MEMORY.IOread(MEMORY.ioNames.BGP) >> 4) & 0x3,
+      (MEMORY.IOread(MEMORY.ioNames.BGP) >> 6) & 0x3,
     ];
   }
 
@@ -327,13 +296,9 @@ class PPU {
    * @param indexTileMap - El índice de inicio del tilemap en la memoria VRAM.
    */
   setTileMap(indexTileMap: number) {
-    for (
-      let offset = 0;
-      offset < this.BACKGROUND.tilemap.length;
-      offset++
-    ) {
+    for (let offset = 0; offset < this.BACKGROUND.tilemap.length; offset++) {
       this.BACKGROUND.tilemap[offset] =
-        this.memory.VRAM[0][indexTileMap + offset - 0x8000];
+        MEMORY.VRAM[0][indexTileMap + offset - 0x8000];
     }
   }
 }

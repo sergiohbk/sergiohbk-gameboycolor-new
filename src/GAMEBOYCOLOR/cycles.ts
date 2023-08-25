@@ -1,24 +1,13 @@
 class CYCLES {
-  cycles: number;
+  cycles: number = 0;
   //----------------
-  cyclesToOAM: number;
-  cyclesToVBlank: number;
-  cyclesToHblank: number;
-  cyclesToTransfer: number;
-  cyclesToFrame: number;
-  cyclesToMode: number;
-  cyclesPPUcounter: number;
-
-  constructor() {
-    this.cycles = 0;
-    this.cyclesToHblank = 206;
-    this.cyclesToVBlank = 456;
-    this.cyclesToOAM = 80;
-    this.cyclesToTransfer = 170;
-    this.cyclesToFrame = 70224;
-    this.cyclesToMode = 0;
-    this.cyclesPPUcounter = 0;
-  }
+  ToOAM: number = 80;
+  ToVBlank: number = 456;
+  ToHblank: number = 206;
+  ToTransfer: number = 170;
+  ToFrame: number = 70224;
+  ToMode: number = 0;
+  PPUcounter: number = 0;
 
   setCycles(cycles: number) {
     this.cycles = cycles;
@@ -29,27 +18,30 @@ class CYCLES {
   resCycles(cycles: number) {
     this.cycles -= cycles;
   }
-  getCycles() {
-    return this.cycles;
-  }
   updateCyclesCounter() {
-    this.cyclesPPUcounter += this.cycles - this.cyclesPPUcounter;
+    this.PPUcounter += this.cycles - this.PPUcounter;
   }
   updateToNewFrame() {
-    this.cyclesPPUcounter %= this.cyclesToFrame;
-    this.cyclesToMode %= this.cyclesToFrame;
+    this.PPUcounter %= this.ToFrame;
+    this.ToMode %= this.ToFrame;
   }
-  setOAMCycles() {
-    this.cyclesToMode += this.cyclesToOAM;
+  setPPUmode(mode: number) {
+    if (mode === 0) this.setHblankCycles();
+    else if (mode === 1) this.setVblankCycles();
+    else if (mode === 2) this.setOAMCycles();
+    else if (mode === 3) this.setTransferCycles();
   }
-  setTransferCycles() {
-    this.cyclesToMode += this.cyclesToTransfer;
+  private setOAMCycles() {
+    this.ToMode += this.ToOAM;
   }
-  setHblankCycles() {
-    this.cyclesToMode += this.cyclesToHblank;
+  private setTransferCycles() {
+    this.ToMode += this.ToTransfer;
   }
-  setVblankCycles() {
-    this.cyclesToMode += this.cyclesToVBlank;
+  private setHblankCycles() {
+    this.ToMode += this.ToHblank;
+  }
+  private setVblankCycles() {
+    this.ToMode += this.ToVBlank;
   }
 }
 
