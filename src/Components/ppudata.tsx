@@ -10,20 +10,14 @@ function PpuData() {
   useEffect(() => {
     const interval = setInterval(() => {
       setLCDC(
-        DEBUGENGINE.DataInterpreter.getPPULCDC(
-          MEMORY.IOregisters[0xff40],
-          true,
-        ),
+        DEBUGENGINE.DataInterpreter.getPPULCDC(MEMORY.IOregisters[0x40], true),
       );
       setStat(
-        DEBUGENGINE.DataInterpreter.getPPUSTAT(
-          MEMORY.IOregisters[0xff41],
-          true,
-        ),
+        DEBUGENGINE.DataInterpreter.getPPUSTAT(MEMORY.IOregisters[0x41], true),
       );
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [lcdc]);
 
   return (
     <div

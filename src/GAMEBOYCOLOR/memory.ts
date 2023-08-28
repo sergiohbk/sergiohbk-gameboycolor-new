@@ -36,7 +36,7 @@ class Memory extends MemoryData {
     this.WORKRAM[7].fill(0xff);
     this.OAM.fill(0xff);
     this.HIGHRAM.fill(0xff);
-    this.IOregisters.fill(0xff);
+    this.IOregisters.fill(0x00);
   }
 
   write(address: number, value: number) {

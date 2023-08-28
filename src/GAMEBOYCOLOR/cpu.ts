@@ -54,7 +54,7 @@ class CPU {
 
   private fetch(): number {
     if (this.PC <= 0xffff) {
-      //0xC224
+      //C187
       return MEMORY.read(this.PC);
     } else
       throw new Error(`the program counter try to fetch from ${this.PC} but 
@@ -3203,37 +3203,37 @@ class CPU {
     switch (op) {
       case 'RLCA':
       case 'RLC':
-        result = (register << 1) | (register >> 7);
+        result = ((register << 1) & 0xff) | (register >> 7);
         this.carryFlag = register > 0x7f;
         break;
       case 'RRCA':
       case 'RRC':
-        result = (register >> 1) | (register << 7);
+        result = ((register >> 1) & 0xff) | (register << 7);
         this.carryFlag = (register & 0b1) === 1;
         break;
       case 'RLA':
       case 'RL':
-        result = (register << 1) | (this.carryFlag ? 1 : 0);
+        result = ((register << 1) & 0xff) | (this.carryFlag ? 1 : 0);
         this.carryFlag = register > 0x7f;
         break;
       case 'RRA':
       case 'RR':
-        result = (register >> 1) | (this.carryFlag ? 0x80 : 0);
+        result = ((register >> 1) & 0xff) | (this.carryFlag ? 0x80 : 0);
         this.carryFlag = (register & 0b1) === 1;
         break;
       case 'SLA':
-        result = register << 1;
+        result = (register << 1) & 0xff;
         this.carryFlag = register > 0x7f;
         break;
       case 'SRA':
-        result = (register >> 1) | (register & 0x80);
+        result = ((register >> 1) & 0xff) | (register & 0x80);
         break;
       case 'SWAP':
         result = ((register & 0xf) << 4) | (register >> 4);
         this.carryFlag = false;
         break;
       case 'SRL':
-        result = register >> 1;
+        result = (register >> 1) & 0xff;
         this.carryFlag = (register & 0b1) === 1;
         break;
     }
@@ -3409,6 +3409,44 @@ class CPU {
     this.L = 0x4d;
     this.SP = 0xfffe;
     this.PC = 0x0100;
+
+    MEMORY.write(0xff00, 0xcf);
+    MEMORY.write(0xff01, 0x00);
+    MEMORY.write(0xff02, 0x7e);
+    MEMORY.write(0xff04, 0x18);
+    MEMORY.write(0xff05, 0x00);
+    MEMORY.write(0xff06, 0x00);
+    MEMORY.write(0xff07, 0xf8);
+    MEMORY.write(0xff0f, 0xe1);
+    MEMORY.write(0xff10, 0x80);
+    MEMORY.write(0xff11, 0xbf);
+    MEMORY.write(0xff12, 0xf3);
+    MEMORY.write(0xff13, 0xff);
+    MEMORY.write(0xff14, 0xbf);
+    MEMORY.write(0xff16, 0x3f);
+    MEMORY.write(0xff17, 0x00);
+    MEMORY.write(0xff18, 0xff);
+    MEMORY.write(0xff19, 0xbf);
+    MEMORY.write(0xff1a, 0x7f);
+    MEMORY.write(0xff1b, 0xff);
+    MEMORY.write(0xff1c, 0x9f);
+    MEMORY.write(0xff1e, 0xbf);
+    MEMORY.write(0xff20, 0xff);
+    MEMORY.write(0xff21, 0x00);
+    MEMORY.write(0xff22, 0x00);
+    MEMORY.write(0xff23, 0xbf);
+    MEMORY.write(0xff24, 0x77);
+    MEMORY.write(0xff25, 0xf3);
+    MEMORY.write(0xff26, 0xf1);
+    MEMORY.write(0xff40, 0x91);
+    MEMORY.write(0xff41, 0x81);
+    MEMORY.write(0xff42, 0x00);
+    MEMORY.write(0xff43, 0x00);
+    MEMORY.write(0xff44, 0x91);
+    MEMORY.write(0xff45, 0x00);
+    MEMORY.write(0xff46, 0xff);
+    MEMORY.write(0xff47, 0xfc);
+    MEMORY.write(0xffff, 0x00);
 
     this.carryFlag = true;
     this.halfCarryFlag = true;
